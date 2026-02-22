@@ -1,6 +1,6 @@
 # Padrão de Interoperabilidade - Blockchain LSD 2025
 
-**Equipe:** Luiz Antonio, Max  
+**Equipe:** Andrey Oliveira, Andreya Paiva
 **Data:** 03/02/2026
 
 ---

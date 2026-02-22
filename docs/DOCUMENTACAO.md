@@ -4,7 +4,7 @@
 
 Sistema distribuído de criptomoeda simplificado (Bitcoin-like) implementado em Python.
 
-**Equipe:** Luiz Antonio, Max
+**Equipe:** Andrey Oliveira, Andreya Paiva
 
 ---
 
@@ -126,15 +126,17 @@ timestamp = 0  # Fixo para consistência entre nós
 
 **Classe:** `Miner`
 
-**Algoritmo:**
+**Algoritmo (paralelo com 4 threads):**
 ```
-1. Criar bloco candidato com transações pendentes
-2. nonce = 0
-3. Enquanto hash não começar com "000":
-   - Calcular hash do bloco
-   - nonce++
-4. Retornar bloco minerado
+1. Ordenar transações pendentes por valor (maior valor primeiro)
+2. Adicionar transação de recompensa coinbase no início
+3. Dividir busca de nonces entre WORKERS=4 threads:
+   - Worker i testa nonces: i, i+4, i+8, i+12, ...
+4. A primeira thread a encontrar hash válido sinaliza as demais
+5. Retornar bloco minerado (ou None se interrompido)
 ```
+
+Quando um bloco chega de outro nó, `stop_mining()` é chamado e as threads param.
 
 **Métodos:**
 - `mine_block(transactions, on_progress)` - Minera novo bloco
@@ -276,14 +278,14 @@ uv run python -c "
 from src.blockchain import Block, Blockchain, Transaction, Miner
 
 bc = Blockchain()
-tx = Transaction(origem='genesis', destino='luiz', valor=50)
+tx = Transaction(origem='genesis', destino='andrey', valor=50)
 bc.add_transaction(tx)
 
-miner = Miner(bc, 'luiz')
+miner = Miner(bc, 'andrey')
 block = miner.mine_block()
 bc.add_block(block)
 
-print(f'Saldo: {bc.get_balance(\"luiz\")}')
+print(f'Saldo: {bc.get_balance(\"andrey\")}')
 print(f'Chain válida: {bc.is_valid_chain()}')
 "
 ```
