@@ -32,7 +32,7 @@ bitcoin-like-distributed-system/
 │   ├── DOCUMENTACAO.md
 │   ├── PADRONIZACAO.md
 │   └── PADRONIZACAO_INTEROPERABILIDADE.md
-├── main.py                  # Ponto de entrada com menu interativo
+├── gui.py                   # Ponto de entrada — interface gráfica
 ├── Dockerfile
 ├── docker-compose.yml       # Sobe 3 nós locais para teste
 ├── pyproject.toml
@@ -42,54 +42,68 @@ bitcoin-like-distributed-system/
 
 ---
 
-## Instalação e Execução
-
-### Sem Docker
+## Instalação
 
 ```bash
-# Instalar dependências
+# Instalar o uv (caso não tenha)
+pip install uv
+
+# Instalar as dependências do projeto
 uv sync
-
-# Iniciar um nó isolado
-uv run python main.py --port 5000
-
-# Iniciar conectando a outro nó (bootstrap)
-uv run python main.py --host 0.0.0.0 --port 5001 --bootstrap localhost:5000
 ```
-
-### Com Docker (3 nós locais)
-
-```bash
-# Sobe node1, node2 e node3 em uma rede interna
-docker compose up --build
-
-# Acessar o menu interativo de um nó
-docker attach blockchain-node2
-```
-
-Os nós 2 e 3 já iniciam conectados ao nó 1 e sincronizam a blockchain automaticamente.
 
 ---
 
-## Menu Interativo
+## Execução
 
-Ao iniciar, o nó exibe um menu de linha de comando:
+### Nó isolado (sem rede)
 
+```bash
+uv run python gui.py --port 5000 --wallet andrey
 ```
-==================================================
-BITCOIN BLOCKCHAIN - Menu de Comandos
-==================================================
-1. Criar transação
-2. Ver transações pendentes
-3. Minerar bloco
-4. Ver blockchain
-5. Ver saldo
-6. Ver peers conectados
-7. Conectar a peer
-8. Sincronizar blockchain
-0. Sair
-==================================================
+
+### Dois nós na mesma máquina (abra dois terminais)
+
+```bash
+# Terminal 1 — primeiro nó
+uv run python gui.py --port 5000 --wallet andrey
+
+# Terminal 2 — segundo nó, conecta ao primeiro
+uv run python gui.py --port 5001 --wallet andreya --bootstrap localhost:5000
 ```
+
+### Conectar a um nó de outra máquina (laboratório)
+
+```bash
+uv run python gui.py --port 5000 --wallet andrey --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
+```
+
+### Argumentos disponíveis
+
+| Argumento | Padrão | Descrição |
+|-----------|--------|-----------|
+| `--host` | `localhost` | Endereço em que o nó vai escutar |
+| `--port` | `5000` | Porta do nó |
+| `--wallet` | _(host:port)_ | Nome da carteira que recebe recompensas de mineração |
+| `--bootstrap` | _(nenhum)_ | Endereço(s) de nós existentes para entrar na rede |
+
+---
+
+## Interface Gráfica
+
+A interface é dividida em sidebar e abas principais:
+
+**Sidebar**
+- Endereço do nó e nome da carteira
+- Contadores de peers, blocos e transações pendentes (atualizam a cada 2s)
+- Botão de mineração e sincronização
+- Campo para conectar a um novo peer
+
+**Abas**
+- **Nova Transação** — envia uma transação para a rede
+- **Saldo** — consulta o saldo de qualquer endereço
+- **Blockchain** — exibe todos os blocos e suas transações
+- **Pendentes** — exibe transações ainda não mineradas
 
 ---
 
