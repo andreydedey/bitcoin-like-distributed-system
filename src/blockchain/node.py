@@ -228,10 +228,12 @@ class Node:
             self.blockchain.replace_chain(best_chain)
             self.logger.info(f"Blockchain sincronizada de {best_peer}: {best_length} blocos")
 
-    def broadcast_transaction(self, transaction: Transaction):
+    def broadcast_transaction(self, transaction: Transaction) -> bool:
         if self.blockchain.add_transaction(transaction):
             message = Protocol.new_transaction(transaction.to_dict())
             self._broadcast(message)
+            return True
+        return False
 
     def broadcast_block(self, block: Block):
         if self.blockchain.add_block(block):

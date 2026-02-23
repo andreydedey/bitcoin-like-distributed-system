@@ -17,16 +17,23 @@ class Blockchain:
         return self.chain[-1]
 
     def get_balance(self, address: str) -> float:
-        all_txs = [
+        confirmed_txs = [
             tx
             for block in self.chain
             for tx in block.transactions
-        ] + self.pending_transactions
+        ]
 
-        received = sum(tx.valor for tx in all_txs if tx.destino == address)
-        sent = sum(tx.valor for tx in all_txs if tx.origem == address)
+        received = sum(tx.valor for tx in confirmed_txs if tx.destino == address)
+        sent = sum(tx.valor for tx in confirmed_txs if tx.origem == address)
 
         return received - sent
+
+    def get_available_balance(self, address: str) -> float:
+        confirmed = self.get_balance(address)
+        pending_sent = sum(
+            tx.valor for tx in self.pending_transactions if tx.origem == address
+        )
+        return confirmed - pending_sent
 
     def add_transaction(self, transaction: Transaction) -> bool:
         if transaction.id in self._pending_ids:
@@ -38,8 +45,7 @@ class Blockchain:
                     return False
 
         if transaction.origem not in ("genesis", "coinbase"):
-            balance = self.get_balance(transaction.origem)
-            if balance < transaction.valor:
+            if self.get_available_balance(transaction.origem) < transaction.valor:
                 return False
 
         self.pending_transactions.append(transaction)

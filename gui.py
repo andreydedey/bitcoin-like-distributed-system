@@ -257,14 +257,11 @@ class BlockchainGUI:
             self._tx_status("Valor inválido.", "red")
             return
 
-        if origem not in ("genesis", "coinbase"):
-            saldo = self.node.blockchain.get_balance(origem)
-            if saldo < valor:
-                self._tx_status(f"Saldo insuficiente: {origem} tem {saldo:.2f}", "red")
-                return
-
         tx = Transaction(origem=origem, destino=destino, valor=valor)
-        self.node.broadcast_transaction(tx)
+        if not self.node.broadcast_transaction(tx):
+            saldo = self.node.blockchain.get_available_balance(origem)
+            self._tx_status(f"Saldo insuficiente: {origem} tem {saldo:.2f} disponível", "red")
+            return
         self._tx_status(f"✓ Transação enviada: {tx.id[:14]}...", "#2ecc71")
         for entry in (self.entry_origem, self.entry_destino, self.entry_valor):
             entry.delete(0, "end")
