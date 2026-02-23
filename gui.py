@@ -274,6 +274,12 @@ class BlockchainGUI:
         addr = self.entry_bal_addr.get().strip()
         if not addr:
             return
+        if not self.node.blockchain.address_exists(addr):
+            self.lbl_balance.configure(
+                text=f"Endereço '{addr}' não encontrado na blockchain.",
+                text_color="gray",
+            )
+            return
         balance = self.node.blockchain.get_balance(addr)
         color = "#2ecc71" if balance >= 0 else "#e74c3c"
         self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
@@ -368,10 +374,10 @@ def _divider(parent, row: int):
 
 def main():
     parser = argparse.ArgumentParser(description="GUI do nó blockchain")
-    parser.add_argument("--host", default="localhost")
+    parser.add_argument("--host", default="172.20.10.7")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--bootstrap", nargs="*", default=[])
-    parser.add_argument("--wallet", default="", help="Nome da carteira (ex: andrey)")
+    parser.add_argument("--wallet", default="andrey", help="Nome da carteira (ex: andrey)")
     args = parser.parse_args()
 
     app = BlockchainGUI(
