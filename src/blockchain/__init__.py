@@ -1,16 +1,3 @@
-"""
-Blockchain LSD - Criptomoeda Distribuída Simplificada
-UFPA - Laboratório de Sistemas Distribuídos
-
-Módulos:
-- Block: estrutura de um bloco na cadeia
-- Transaction: estrutura de uma transação
-- Blockchain: gerenciamento da cadeia e mempool
-- Miner: algoritmo de Proof of Work paralelo
-- Node: nó P2P com gerenciamento de peers e sincronização
-- Protocol / Message / MessageType: protocolo de comunicação entre nós
-"""
-
 from .block import Block
 from .blockchain import Blockchain
 from .transaction import Transaction

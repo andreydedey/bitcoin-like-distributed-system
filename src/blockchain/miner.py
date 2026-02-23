@@ -1,7 +1,3 @@
-"""
-Módulo de Mineração (Proof of Work)
-"""
-
 import time
 import threading
 from typing import Callable
@@ -12,18 +8,8 @@ from .transaction import Transaction
 
 
 class Miner:
-    """
-    Implementa o algoritmo de Proof of Work com mineração paralela.
-
-    Divide o espaço de nonces entre múltiplas threads trabalhadoras.
-    Cada worker busca em sua própria faixa (interleaved): o worker i
-    testa nonces i, i+WORKERS, i+2*WORKERS, ...
-
-    A primeira thread a encontrar um hash válido sinaliza as demais para parar.
-    """
-
-    WORKERS = 4             # Número de threads de mineração paralelas
-    PROGRESS_INTERVAL = 5000  # Reporta progresso a cada N tentativas por worker
+    WORKERS = 4
+    PROGRESS_INTERVAL = 5000
 
     def __init__(self, blockchain: Blockchain, miner_address: str):
         self.blockchain = blockchain
@@ -37,28 +23,13 @@ class Miner:
         transactions: list[Transaction] = None,
         on_progress: Callable[[int], None] = None,
     ) -> Block | None:
-        """
-        Minera um novo bloco com as transações pendentes.
-
-        Seleciona transações priorizando maior valor (simula taxas de rede).
-        Divide o trabalho de PoW entre WORKERS threads paralelas.
-
-        Args:
-            transactions: Lista de transações (usa pendentes ordenadas por valor se None)
-            on_progress: Callback chamado periodicamente com o nonce atual
-
-        Returns:
-            Bloco minerado ou None se interrompido
-        """
         if transactions is None:
-            # Prioriza transações de maior valor (similar a fee priority)
             transactions = sorted(
                 self.blockchain.pending_transactions,
                 key=lambda tx: tx.valor,
                 reverse=True,
             )
 
-        # Adiciona transação de recompensa (Coinbase)
         reward_tx = Transaction(
             origem="coinbase",
             destino=self.miner_address,
@@ -66,7 +37,6 @@ class Miner:
         )
         transactions = [reward_tx] + list(transactions)
 
-        # Snapshot dos parâmetros do bloco antes de iniciar as threads
         block_index = len(self.blockchain.chain)
         prev_hash = self.blockchain.last_block.hash
         timestamp = time.time()
@@ -77,11 +47,6 @@ class Miner:
         stop_event = threading.Event()
 
         def worker(worker_id: int):
-            """
-            Busca nonces em faixa interleaved:
-            worker 0 → 0, WORKERS, 2*WORKERS, ...
-            worker 1 → 1, WORKERS+1, 2*WORKERS+1, ...
-            """
             block = Block(
                 index=block_index,
                 previous_hash=prev_hash,
@@ -121,5 +86,4 @@ class Miner:
         return self._found_block
 
     def stop_mining(self):
-        """Interrompe todas as threads de mineração."""
         self.mining = False

@@ -1,44 +1,16 @@
 #!/usr/bin/env python3
-"""
-Bitcoin Blockchain - Ponto de entrada principal
-
-Uso:
-    uv run python main.py --port 5000 --bootstrap localhost:5001
-"""
-
 import argparse
-import threading
 import time
 
 from src.blockchain import Node, Transaction
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Nó da rede blockchain distribuída"
-    )
-    parser.add_argument(
-        "--host",
-        default="localhost",
-        help="Host do nó (default: localhost)"
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=5000,
-        help="Porta do nó (default: 5000)"
-    )
-    parser.add_argument(
-        "--bootstrap",
-        nargs="*",
-        default=[],
-        help="Endereços de nós bootstrap (ex: localhost:5001)"
-    )
-    parser.add_argument(
-        "--wallet",
-        default="",
-        help="Nome da carteira para receber recompensas de mineração (ex: andrey)"
-    )
+    parser = argparse.ArgumentParser(description="Nó da rede blockchain distribuída")
+    parser.add_argument("--host", default="localhost", help="Host do nó (default: localhost)")
+    parser.add_argument("--port", type=int, default=5000, help="Porta do nó (default: 5000)")
+    parser.add_argument("--bootstrap", nargs="*", default=[], help="Endereços de nós bootstrap (ex: localhost:5001)")
+    parser.add_argument("--wallet", default="", help="Nome da carteira para receber recompensas de mineração (ex: andrey)")
     return parser.parse_args()
 
 
@@ -65,13 +37,12 @@ def create_transaction(node: Node):
     try:
         valor = float(input("Valor: ").strip())
         tx = Transaction(origem=origem, destino=destino, valor=valor)
-        
-        # Verifica saldo antes de adicionar
+
         saldo = node.blockchain.get_balance(origem)
         if origem not in ("genesis", "coinbase") and saldo < valor:
             print(f"✗ Saldo insuficiente! {origem} tem {saldo}, precisa de {valor}")
             return
-        
+
         node.broadcast_transaction(tx)
         print(f"✓ Transação criada: {tx.id[:8]}...")
     except ValueError as e:
@@ -83,7 +54,7 @@ def show_pending(node: Node):
     if not node.blockchain.pending_transactions:
         print("Nenhuma transação pendente.")
         return
-    
+
     for tx in node.blockchain.pending_transactions:
         print(f"  [{tx.id[:8]}...] {tx.origem} -> {tx.destino}: {tx.valor}")
 
@@ -94,7 +65,7 @@ def mine_block(node: Node):
     start = time.time()
     block = node.mine()
     elapsed = time.time() - start
-    
+
     if block:
         print(f"✓ Bloco #{block.index} minerado em {elapsed:.2f}s")
         print(f"  Hash: {block.hash}")
@@ -126,7 +97,7 @@ def show_peers(node: Node):
     if not node.peers:
         print("Nenhum peer conectado.")
         return
-    
+
     for peer in node.peers:
         print(f"  - {peer}")
 
@@ -147,26 +118,22 @@ def sync_chain(node: Node):
 
 def main():
     args = parse_args()
-    
-    # Cria e inicia o nó
+
     node = Node(host=args.host, port=args.port, wallet=args.wallet)
     node.start()
-    
-    # Conecta aos nós bootstrap
+
     for bootstrap in args.bootstrap:
         if node.connect_to_peer(bootstrap):
             print(f"Conectado ao bootstrap: {bootstrap}")
-    
-    # Sincroniza blockchain se tiver peers
+
     if node.peers:
         node.sync_blockchain()
-    
-    # Loop principal
+
     try:
         while True:
             print_menu()
             choice = input("Escolha: ").strip()
-            
+
             match choice:
                 case "1":
                     create_transaction(node)
@@ -189,10 +156,10 @@ def main():
                     break
                 case _:
                     print("Opção inválida!")
-    
+
     except KeyboardInterrupt:
         print("\nInterrompido pelo usuário")
-    
+
     finally:
         node.stop()
 

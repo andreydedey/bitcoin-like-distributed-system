@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-"""
-Bitcoin Blockchain - Interface Gráfica (CustomTkinter)
-
-Uso:
-    uv run python gui.py --port 5000
-    uv run python gui.py --port 5001 --bootstrap localhost:5000
-"""
-
 import argparse
 import threading
 
@@ -36,10 +28,6 @@ class BlockchainGUI:
 
         self._build_ui()
         self._schedule_refresh()
-
-    # ------------------------------------------------------------------
-    # Layout
-    # ------------------------------------------------------------------
 
     def _build_ui(self):
         self.root.grid_columnconfigure(1, weight=1)
@@ -75,7 +63,6 @@ class BlockchainGUI:
         )
         self.lbl_wallet.grid(row=2, column=0, padx=20, pady=(0, 12))
 
-        # Status chips
         status_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
         status_frame.grid(row=3, column=0, padx=20, pady=4, sticky="ew")
         status_frame.grid_columnconfigure((0, 1), weight=1)
@@ -115,7 +102,6 @@ class BlockchainGUI:
 
         _divider(sidebar, row=4)
 
-        # Botão minerar
         self.btn_mine = ctk.CTkButton(
             sidebar,
             text="⛏  Minerar Bloco",
@@ -173,10 +159,6 @@ class BlockchainGUI:
         self._tab_blockchain()
         self._tab_pending()
 
-    # ------------------------------------------------------------------
-    # Abas
-    # ------------------------------------------------------------------
-
     def _tab_transaction(self):
         tab = self.tabs.add("💸  Nova Transação")
         tab.grid_columnconfigure(0, weight=1)
@@ -205,9 +187,7 @@ class BlockchainGUI:
             height=42,
         ).grid(row=3, column=0, columnspan=2, padx=16, pady=16, sticky="ew")
 
-        self.lbl_tx_status = ctk.CTkLabel(
-            tab, text="", font=ctk.CTkFont(size=13)
-        )
+        self.lbl_tx_status = ctk.CTkLabel(tab, text="", font=ctk.CTkFont(size=13))
         self.lbl_tx_status.grid(row=1, column=0, pady=4)
 
     def _tab_balance(self):
@@ -231,11 +211,7 @@ class BlockchainGUI:
             height=42,
         ).grid(row=1, column=0, columnspan=2, padx=16, pady=12, sticky="ew")
 
-        self.lbl_balance = ctk.CTkLabel(
-            tab,
-            text="",
-            font=ctk.CTkFont(size=32, weight="bold"),
-        )
+        self.lbl_balance = ctk.CTkLabel(tab, text="", font=ctk.CTkFont(size=32, weight="bold"))
         self.lbl_balance.grid(row=1, column=0, pady=24)
 
     def _tab_blockchain(self):
@@ -248,9 +224,9 @@ class BlockchainGUI:
         )
         self.txt_chain.grid(row=0, column=0, sticky="nsew", padx=6, pady=(6, 4))
 
-        ctk.CTkButton(
-            tab, text="Atualizar", command=self._refresh_chain, height=32
-        ).grid(row=1, column=0, pady=(0, 6))
+        ctk.CTkButton(tab, text="Atualizar", command=self._refresh_chain, height=32).grid(
+            row=1, column=0, pady=(0, 6)
+        )
 
     def _tab_pending(self):
         tab = self.tabs.add("⏳  Pendentes")
@@ -262,13 +238,9 @@ class BlockchainGUI:
         )
         self.txt_pending.grid(row=0, column=0, sticky="nsew", padx=6, pady=(6, 4))
 
-        ctk.CTkButton(
-            tab, text="Atualizar", command=self._refresh_pending, height=32
-        ).grid(row=1, column=0, pady=(0, 6))
-
-    # ------------------------------------------------------------------
-    # Ações
-    # ------------------------------------------------------------------
+        ctk.CTkButton(tab, text="Atualizar", command=self._refresh_pending, height=32).grid(
+            row=1, column=0, pady=(0, 6)
+        )
 
     def _create_transaction(self):
         origem = self.entry_origem.get().strip()
@@ -288,9 +260,7 @@ class BlockchainGUI:
         if origem not in ("genesis", "coinbase"):
             saldo = self.node.blockchain.get_balance(origem)
             if saldo < valor:
-                self._tx_status(
-                    f"Saldo insuficiente: {origem} tem {saldo:.2f}", "red"
-                )
+                self._tx_status(f"Saldo insuficiente: {origem} tem {saldo:.2f}", "red")
                 return
 
         tx = Transaction(origem=origem, destino=destino, valor=valor)
@@ -309,9 +279,7 @@ class BlockchainGUI:
             return
         balance = self.node.blockchain.get_balance(addr)
         color = "#2ecc71" if balance >= 0 else "#e74c3c"
-        self.lbl_balance.configure(
-            text=f"{addr}:  {balance:.2f}", text_color=color
-        )
+        self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
 
     def _mine(self):
         self.btn_mine.configure(state="disabled", text="Minerando...")
@@ -330,9 +298,7 @@ class BlockchainGUI:
                 text=f"✓ Bloco #{block.index} minerado!", text_color="#2ecc71"
             )
         else:
-            self.lbl_mine_status.configure(
-                text="Mineração interrompida", text_color="gray"
-            )
+            self.lbl_mine_status.configure(text="Mineração interrompida", text_color="gray")
         self.root.after(5000, lambda: self.lbl_mine_status.configure(text=""))
 
     def _sync(self):
@@ -357,9 +323,7 @@ class BlockchainGUI:
                 f"  Txs ({len(block.transactions)}):\n",
             )
             for tx in block.transactions:
-                self.txt_chain.insert(
-                    "end", f"    {tx.origem} → {tx.destino}: {tx.valor}\n"
-                )
+                self.txt_chain.insert("end", f"    {tx.origem} → {tx.destino}: {tx.valor}\n")
             self.txt_chain.insert("end", "\n")
         self.txt_chain.configure(state="disabled")
 
@@ -378,24 +342,17 @@ class BlockchainGUI:
                 )
         self.txt_pending.configure(state="disabled")
 
-    # ------------------------------------------------------------------
-    # Auto-refresh (a cada 2s)
-    # ------------------------------------------------------------------
-
     def _refresh_status(self):
         self.lbl_address.configure(text=self.node.address)
-        peers = len(self.node.peers)
-        blocks = len(self.node.blockchain.chain)
-        pending = len(self.node.blockchain.pending_transactions)
-        self.lbl_peers.configure(text=f"Peers\n{peers}")
-        self.lbl_blocks.configure(text=f"Blocos\n{blocks}")
-        self.lbl_pending.configure(text=f"Pendentes\n{pending}")
+        self.lbl_peers.configure(text=f"Peers\n{len(self.node.peers)}")
+        self.lbl_blocks.configure(text=f"Blocos\n{len(self.node.blockchain.chain)}")
+        self.lbl_pending.configure(
+            text=f"Pendentes\n{len(self.node.blockchain.pending_transactions)}"
+        )
 
     def _schedule_refresh(self):
         self._refresh_status()
         self.root.after(2000, self._schedule_refresh)
-
-    # ------------------------------------------------------------------
 
     def run(self):
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)

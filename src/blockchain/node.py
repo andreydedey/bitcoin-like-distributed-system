@@ -1,7 +1,3 @@
-"""
-Módulo do Nó da Rede P2P
-"""
-
 import random
 import socket
 import threading
@@ -22,26 +18,9 @@ logging.basicConfig(
 
 
 class Node:
-    """
-    Representa um nó na rede P2P da blockchain.
-
-    Responsabilidades:
-    - Executar como processo independente
-    - Comunicar com outros nós via sockets
-    - Manter cópia local da blockchain
-    - Minerar novos blocos
-    - Propagar transações e blocos
-
-    Diferenciais de implementação:
-    - MAX_PEERS: limite de peers simultâneos para evitar sobrecarga
-    - _peer_failures: rastreia falhas por peer para evitar reconexões desnecessárias
-    - sync_blockchain consulta TODOS os peers e adota a cadeia mais longa dentre todos
-    - _broadcast embaralha a ordem dos peers antes de propagar (melhor cobertura)
-    """
-
-    BUFFER_SIZE = 65536   # 64KB
-    MAX_PEERS = 20        # Limite de peers simultâneos
-    MAX_FAILURES = 3      # Falhas consecutivas para ignorar um peer no broadcast
+    BUFFER_SIZE = 65536
+    MAX_PEERS = 20
+    MAX_FAILURES = 3
 
     def __init__(self, host: str = "localhost", port: int = 5000, wallet: str = ""):
         self.host = host
@@ -53,18 +32,16 @@ class Node:
         self.miner = Miner(self.blockchain, self.wallet)
 
         self.peers: set[str] = set()
-        self._peer_failures: dict[str, int] = {}  # peer -> número de falhas consecutivas
+        self._peer_failures: dict[str, int] = {}
         self.server_socket: socket.socket | None = None
         self.running = False
 
         self.logger = logging.getLogger(f"Node:{port}")
 
-        # Callbacks para eventos
         self.on_new_block: Callable[[Block], None] | None = None
         self.on_new_transaction: Callable[[Transaction], None] | None = None
 
     def start(self):
-        """Inicia o servidor do nó."""
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
@@ -78,7 +55,6 @@ class Node:
         accept_thread.start()
 
     def stop(self):
-        """Para o servidor do nó."""
         self.running = False
         self.miner.stop_mining()
         if self.server_socket:
@@ -86,7 +62,6 @@ class Node:
         self.logger.info("Nó encerrado")
 
     def _accept_connections(self):
-        """Loop para aceitar novas conexões."""
         while self.running:
             try:
                 client_socket, address = self.server_socket.accept()
@@ -101,7 +76,6 @@ class Node:
                     self.logger.error(f"Erro ao aceitar conexão: {e}")
 
     def _handle_client(self, client_socket: socket.socket, address: tuple):
-        """Processa mensagens de um cliente."""
         try:
             length_data = client_socket.recv(4)
             if not length_data:
@@ -129,7 +103,6 @@ class Node:
             client_socket.close()
 
     def _process_message(self, message: Message) -> Message | None:
-        """Processa uma mensagem recebida e retorna resposta se necessário."""
         self.logger.info(f"Mensagem recebida: {message.type.value} de {message.sender}")
 
         match message.type:
@@ -178,7 +151,6 @@ class Node:
         return None
 
     def _register_peer(self, peer_address: str):
-        """Registra um peer respeitando o limite MAX_PEERS."""
         if peer_address in self.peers:
             return
         if len(self.peers) >= self.MAX_PEERS:
@@ -187,7 +159,6 @@ class Node:
         self.peers.add(peer_address)
 
     def connect_to_peer(self, peer_address: str) -> bool:
-        """Conecta a um peer e adiciona à lista."""
         if peer_address == self.address:
             return False
 
@@ -229,12 +200,6 @@ class Node:
         return False
 
     def sync_blockchain(self):
-        """
-        Sincroniza a blockchain consultando TODOS os peers.
-
-        Ao contrário de parar no primeiro sucesso, coleta candidatos de todos
-        os peers e adota a cadeia válida mais longa dentre todas as respostas.
-        """
         best_chain: list[Block] | None = None
         best_length = len(self.blockchain.chain)
         best_peer = ""
@@ -264,20 +229,17 @@ class Node:
             self.logger.info(f"Blockchain sincronizada de {best_peer}: {best_length} blocos")
 
     def broadcast_transaction(self, transaction: Transaction):
-        """Propaga uma transação para todos os peers."""
         if self.blockchain.add_transaction(transaction):
             message = Protocol.new_transaction(transaction.to_dict())
             self._broadcast(message)
 
     def broadcast_block(self, block: Block):
-        """Propaga um bloco minerado para todos os peers."""
         if self.blockchain.add_block(block):
             message = Protocol.new_block(block.to_dict())
             self._broadcast(message)
             self.logger.info(f"Bloco #{block.index} propagado para {len(self.peers)} peers")
 
     def mine(self) -> Block | None:
-        """Inicia mineração de um novo bloco."""
         self.logger.info("Iniciando mineração...")
 
         def on_progress(nonce: int):
@@ -292,7 +254,6 @@ class Node:
         return block
 
     def _send_message(self, peer_address: str, message: Message) -> Message | None:
-        """Envia mensagem para um peer e retorna resposta."""
         try:
             host, port = peer_address.split(":")
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -312,7 +273,7 @@ class Node:
                             break
                         data += chunk
                     if data:
-                        self._peer_failures[peer_address] = 0  # Resetar falhas ao ter sucesso
+                        self._peer_failures[peer_address] = 0
                         return Message.from_bytes(data)
 
         except Exception as e:
@@ -322,13 +283,6 @@ class Node:
         return None
 
     def _broadcast(self, message: Message, exclude: str = ""):
-        """
-        Envia mensagem para todos os peers.
-
-        Embaralha a lista de peers antes de propagar para variar a ordem
-        de recebimento na rede (evita padrão fixo de propagação).
-        Pula peers com muitas falhas consecutivas.
-        """
         message.sender = self.address
 
         active_peers = [
