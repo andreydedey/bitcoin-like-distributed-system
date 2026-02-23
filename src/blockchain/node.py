@@ -43,13 +43,14 @@ class Node:
     MAX_PEERS = 20        # Limite de peers simultâneos
     MAX_FAILURES = 3      # Falhas consecutivas para ignorar um peer no broadcast
 
-    def __init__(self, host: str = "localhost", port: int = 5000):
+    def __init__(self, host: str = "localhost", port: int = 5000, wallet: str = ""):
         self.host = host
         self.port = port
         self.address = f"{host}:{port}"
+        self.wallet = wallet or self.address
 
         self.blockchain = Blockchain()
-        self.miner = Miner(self.blockchain, self.address)
+        self.miner = Miner(self.blockchain, self.wallet)
 
         self.peers: set[str] = set()
         self._peer_failures: dict[str, int] = {}  # peer -> número de falhas consecutivas

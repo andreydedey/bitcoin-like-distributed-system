@@ -19,8 +19,8 @@ ctk.set_default_color_theme("blue")
 
 
 class BlockchainGUI:
-    def __init__(self, host: str, port: int, bootstrap_peers: list[str]):
-        self.node = Node(host=host, port=port)
+    def __init__(self, host: str, port: int, bootstrap_peers: list[str], wallet: str = ""):
+        self.node = Node(host=host, port=port, wallet=wallet)
         self.node.start()
 
         for peer in bootstrap_peers:
@@ -29,7 +29,8 @@ class BlockchainGUI:
             self.node.sync_blockchain()
 
         self.root = ctk.CTk()
-        self.root.title(f"Bitcoin Blockchain — {host}:{port}")
+        label = wallet if wallet else f"{host}:{port}"
+        self.root.title(f"Bitcoin Blockchain — {label}")
         self.root.geometry("1050x680")
         self.root.minsize(860, 580)
 
@@ -64,11 +65,19 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="gray",
         )
-        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 16))
+        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 4))
+
+        self.lbl_wallet = ctk.CTkLabel(
+            sidebar,
+            text=f"carteira: {self.node.wallet}",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#3b9fd6",
+        )
+        self.lbl_wallet.grid(row=2, column=0, padx=20, pady=(0, 12))
 
         # Status chips
         status_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        status_frame.grid(row=2, column=0, padx=20, pady=4, sticky="ew")
+        status_frame.grid(row=3, column=0, padx=20, pady=4, sticky="ew")
         status_frame.grid_columnconfigure((0, 1), weight=1)
 
         self.lbl_peers = ctk.CTkLabel(
@@ -104,7 +113,7 @@ class BlockchainGUI:
         )
         self.lbl_pending.grid(row=1, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
 
-        _divider(sidebar, row=3)
+        _divider(sidebar, row=4)
 
         # Botão minerar
         self.btn_mine = ctk.CTkButton(
@@ -116,7 +125,7 @@ class BlockchainGUI:
             height=42,
             font=ctk.CTkFont(size=13, weight="bold"),
         )
-        self.btn_mine.grid(row=4, column=0, padx=20, pady=(6, 4), sticky="ew")
+        self.btn_mine.grid(row=5, column=0, padx=20, pady=(6, 4), sticky="ew")
 
         ctk.CTkButton(
             sidebar,
@@ -125,7 +134,7 @@ class BlockchainGUI:
             fg_color="transparent",
             border_width=1,
             height=36,
-        ).grid(row=5, column=0, padx=20, pady=4, sticky="ew")
+        ).grid(row=6, column=0, padx=20, pady=4, sticky="ew")
 
         self.lbl_mine_status = ctk.CTkLabel(
             sidebar,
@@ -133,22 +142,22 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="#e67e22",
         )
-        self.lbl_mine_status.grid(row=6, column=0, padx=20, pady=2)
+        self.lbl_mine_status.grid(row=7, column=0, padx=20, pady=2)
 
-        _divider(sidebar, row=7)
+        _divider(sidebar, row=8)
 
         ctk.CTkLabel(sidebar, text="Conectar a peer", font=ctk.CTkFont(size=12)).grid(
-            row=8, column=0, padx=20, pady=(4, 2)
+            row=9, column=0, padx=20, pady=(4, 2)
         )
         self.entry_peer = ctk.CTkEntry(sidebar, placeholder_text="host:port")
-        self.entry_peer.grid(row=9, column=0, padx=20, pady=4, sticky="ew")
+        self.entry_peer.grid(row=10, column=0, padx=20, pady=4, sticky="ew")
 
         ctk.CTkButton(
             sidebar,
             text="Conectar",
             command=self._connect_peer,
             height=34,
-        ).grid(row=10, column=0, padx=20, pady=(4, 20), sticky="ew")
+        ).grid(row=11, column=0, padx=20, pady=(4, 20), sticky="ew")
 
     def _build_main(self):
         main = ctk.CTkFrame(self.root, corner_radius=0, fg_color="transparent")
@@ -408,9 +417,15 @@ def main():
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--bootstrap", nargs="*", default=[])
+    parser.add_argument("--wallet", default="", help="Nome da carteira (ex: andrey)")
     args = parser.parse_args()
 
-    app = BlockchainGUI(host=args.host, port=args.port, bootstrap_peers=args.bootstrap)
+    app = BlockchainGUI(
+        host=args.host,
+        port=args.port,
+        bootstrap_peers=args.bootstrap,
+        wallet=args.wallet,
+    )
     app.run()
 
 

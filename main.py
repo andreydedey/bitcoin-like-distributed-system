@@ -34,6 +34,11 @@ def parse_args():
         default=[],
         help="Endereços de nós bootstrap (ex: localhost:5001)"
     )
+    parser.add_argument(
+        "--wallet",
+        default="",
+        help="Nome da carteira para receber recompensas de mineração (ex: andrey)"
+    )
     return parser.parse_args()
 
 
@@ -144,7 +149,7 @@ def main():
     args = parse_args()
     
     # Cria e inicia o nó
-    node = Node(host=args.host, port=args.port)
+    node = Node(host=args.host, port=args.port, wallet=args.wallet)
     node.start()
     
     # Conecta aos nós bootstrap
