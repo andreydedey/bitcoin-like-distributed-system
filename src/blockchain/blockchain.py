@@ -16,6 +16,13 @@ class Blockchain:
     def last_block(self) -> Block:
         return self.chain[-1]
 
+    def address_exists(self, address: str) -> bool:
+        return any(
+            tx.origem == address or tx.destino == address
+            for block in self.chain
+            for tx in block.transactions
+        )
+
     def get_balance(self, address: str) -> float:
         confirmed_txs = [
             tx
