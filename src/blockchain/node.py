@@ -22,14 +22,13 @@ class Node:
     MAX_PEERS = 20
     MAX_FAILURES = 3
 
-    def __init__(self, host: str = "localhost", port: int = 5000, wallet: str = ""):
+    def __init__(self, host: str = "localhost", port: int = 5000):
         self.host = host
         self.port = port
         self.address = f"{host}:{port}"
-        self.wallet = wallet or self.address
 
         self.blockchain = Blockchain()
-        self.miner = Miner(self.blockchain, self.wallet)
+        self.miner = Miner(self.blockchain, self.address)
 
         self.peers: set[str] = set()
         self._peer_failures: dict[str, int] = {}
@@ -136,8 +135,13 @@ class Node:
 
             case MessageType.PING:
                 if message.sender and message.sender != self.address:
-                    self._register_peer(message.sender)
-                    self.logger.info(f"Peer registrado via PING: {message.sender}")
+                    new_peer = message.sender
+                    is_new = new_peer not in self.peers
+                    self._register_peer(new_peer)
+                    self.logger.info(f"Peer registrado via PING: {new_peer}")
+                    if is_new:
+                        self._broadcast(Protocol.peers_list([new_peer]), exclude=new_peer)
+                        self.logger.info(f"Novo peer {new_peer} propagado para {len(self.peers) - 1} peers")
                 return Protocol.pong()
 
             case MessageType.DISCOVER_PEERS:
@@ -228,6 +232,12 @@ class Node:
             self.blockchain.replace_chain(best_chain)
             self.logger.info(f"Blockchain sincronizada de {best_peer}: {best_length} blocos")
 
+    def create_transaction(self, origem: str, destino: str, valor: float) -> Transaction | None:
+        tx = Transaction(origem=origem, destino=destino, valor=valor)
+        if self.broadcast_transaction(tx):
+            return tx
+        return None
+
     def broadcast_transaction(self, transaction: Transaction) -> bool:
         if self.blockchain.add_transaction(transaction):
             message = Protocol.new_transaction(transaction.to_dict())
@@ -254,6 +264,24 @@ class Node:
             self.broadcast_block(block)
 
         return block
+
+    def get_balance(self, address: str) -> float:
+        return self.blockchain.get_balance(address)
+
+    def get_available_balance(self, address: str) -> float:
+        return self.blockchain.get_available_balance(address)
+
+    @property
+    def chain(self) -> list[Block]:
+        return self.blockchain.chain
+
+    @property
+    def pending_transactions(self) -> list[Transaction]:
+        return self.blockchain.pending_transactions
+
+    @property
+    def peer_count(self) -> int:
+        return len(self.peers)
 
     def _send_message(self, peer_address: str, message: Message) -> Message | None:
         try:

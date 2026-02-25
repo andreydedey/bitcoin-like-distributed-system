@@ -4,15 +4,15 @@ import threading
 
 import customtkinter as ctk
 
-from src.blockchain import Node, Transaction
+from src.blockchain import Node
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
 
 class BlockchainGUI:
-    def __init__(self, host: str, port: int, bootstrap_peers: list[str], wallet: str = ""):
-        self.node = Node(host=host, port=port, wallet=wallet)
+    def __init__(self, host: str, port: int, bootstrap_peers: list[str]):
+        self.node = Node(host=host, port=port)
         self.node.start()
 
         for peer in bootstrap_peers:
@@ -21,8 +21,7 @@ class BlockchainGUI:
             self.node.sync_blockchain()
 
         self.root = ctk.CTk()
-        label = wallet if wallet else f"{host}:{port}"
-        self.root.title(f"Bitcoin Blockchain — {label}")
+        self.root.title(f"Bitcoin Blockchain — {host}:{port}")
         self.root.geometry("1050x680")
         self.root.minsize(860, 580)
 
@@ -53,18 +52,10 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="gray",
         )
-        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 4))
-
-        self.lbl_wallet = ctk.CTkLabel(
-            sidebar,
-            text=f"carteira: {self.node.wallet}",
-            font=ctk.CTkFont(size=11, weight="bold"),
-            text_color="#3b9fd6",
-        )
-        self.lbl_wallet.grid(row=2, column=0, padx=20, pady=(0, 12))
+        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 12))
 
         status_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        status_frame.grid(row=3, column=0, padx=20, pady=4, sticky="ew")
+        status_frame.grid(row=2, column=0, padx=20, pady=4, sticky="ew")
         status_frame.grid_columnconfigure((0, 1), weight=1)
 
         self.lbl_peers = ctk.CTkLabel(
@@ -100,7 +91,7 @@ class BlockchainGUI:
         )
         self.lbl_pending.grid(row=1, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
 
-        _divider(sidebar, row=4)
+        _divider(sidebar, row=3)
 
         self.btn_mine = ctk.CTkButton(
             sidebar,
@@ -111,7 +102,7 @@ class BlockchainGUI:
             height=42,
             font=ctk.CTkFont(size=13, weight="bold"),
         )
-        self.btn_mine.grid(row=5, column=0, padx=20, pady=(6, 4), sticky="ew")
+        self.btn_mine.grid(row=4, column=0, padx=20, pady=(6, 4), sticky="ew")
 
         ctk.CTkButton(
             sidebar,
@@ -120,7 +111,7 @@ class BlockchainGUI:
             fg_color="transparent",
             border_width=1,
             height=36,
-        ).grid(row=6, column=0, padx=20, pady=4, sticky="ew")
+        ).grid(row=5, column=0, padx=20, pady=4, sticky="ew")
 
         self.lbl_mine_status = ctk.CTkLabel(
             sidebar,
@@ -128,22 +119,22 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="#e67e22",
         )
-        self.lbl_mine_status.grid(row=7, column=0, padx=20, pady=2)
+        self.lbl_mine_status.grid(row=6, column=0, padx=20, pady=2)
 
-        _divider(sidebar, row=8)
+        _divider(sidebar, row=7)
 
         ctk.CTkLabel(sidebar, text="Conectar a peer", font=ctk.CTkFont(size=12)).grid(
-            row=9, column=0, padx=20, pady=(4, 2)
+            row=8, column=0, padx=20, pady=(4, 2)
         )
         self.entry_peer = ctk.CTkEntry(sidebar, placeholder_text="host:port")
-        self.entry_peer.grid(row=10, column=0, padx=20, pady=4, sticky="ew")
+        self.entry_peer.grid(row=9, column=0, padx=20, pady=4, sticky="ew")
 
         ctk.CTkButton(
             sidebar,
             text="Conectar",
             command=self._connect_peer,
             height=34,
-        ).grid(row=11, column=0, padx=20, pady=(4, 20), sticky="ew")
+        ).grid(row=10, column=0, padx=20, pady=(4, 20), sticky="ew")
 
     def _build_main(self):
         main = ctk.CTkFrame(self.root, corner_radius=0, fg_color="transparent")
@@ -257,9 +248,9 @@ class BlockchainGUI:
             self._tx_status("Valor inválido.", "red")
             return
 
-        tx = Transaction(origem=origem, destino=destino, valor=valor)
-        if not self.node.broadcast_transaction(tx):
-            saldo = self.node.blockchain.get_available_balance(origem)
+        tx = self.node.create_transaction(origem=origem, destino=destino, valor=valor)
+        if tx is None:
+            saldo = self.node.get_available_balance(origem)
             self._tx_status(f"Saldo insuficiente: {origem} tem {saldo:.2f} disponível", "red")
             return
         self._tx_status(f"✓ Transação enviada: {tx.id[:14]}...", "#2ecc71")
@@ -274,7 +265,7 @@ class BlockchainGUI:
         addr = self.entry_bal_addr.get().strip()
         if not addr:
             return
-        balance = self.node.blockchain.get_balance(addr)
+        balance = self.node.get_balance(addr)
         color = "#2ecc71" if balance >= 0 else "#e74c3c"
         self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
 
@@ -310,7 +301,7 @@ class BlockchainGUI:
     def _refresh_chain(self):
         self.txt_chain.configure(state="normal")
         self.txt_chain.delete("1.0", "end")
-        for block in self.node.blockchain.chain:
+        for block in self.node.chain:
             self.txt_chain.insert(
                 "end",
                 f"Bloco #{block.index}\n"
@@ -327,7 +318,7 @@ class BlockchainGUI:
     def _refresh_pending(self):
         self.txt_pending.configure(state="normal")
         self.txt_pending.delete("1.0", "end")
-        txs = self.node.blockchain.pending_transactions
+        txs = self.node.pending_transactions
         if not txs:
             self.txt_pending.insert("end", "Nenhuma transação pendente.")
         else:
@@ -341,10 +332,10 @@ class BlockchainGUI:
 
     def _refresh_status(self):
         self.lbl_address.configure(text=self.node.address)
-        self.lbl_peers.configure(text=f"Peers\n{len(self.node.peers)}")
-        self.lbl_blocks.configure(text=f"Blocos\n{len(self.node.blockchain.chain)}")
+        self.lbl_peers.configure(text=f"Peers\n{self.node.peer_count}")
+        self.lbl_blocks.configure(text=f"Blocos\n{len(self.node.chain)}")
         self.lbl_pending.configure(
-            text=f"Pendentes\n{len(self.node.blockchain.pending_transactions)}"
+            text=f"Pendentes\n{len(self.node.pending_transactions)}"
         )
 
     def _schedule_refresh(self):
@@ -371,14 +362,12 @@ def main():
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--bootstrap", nargs="*", default=[])
-    parser.add_argument("--wallet", default="", help="Nome da carteira (ex: andrey)")
     args = parser.parse_args()
 
     app = BlockchainGUI(
         host=args.host,
         port=args.port,
         bootstrap_peers=args.bootstrap,
-        wallet=args.wallet,
     )
     app.run()
 
