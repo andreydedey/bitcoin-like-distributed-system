@@ -52,10 +52,18 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="gray",
         )
-        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 12))
+        self.lbl_address.grid(row=1, column=0, padx=20, pady=(0, 4))
+
+        self.lbl_own_balance = ctk.CTkLabel(
+            sidebar,
+            text="saldo: 0.00",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#2ecc71",
+        )
+        self.lbl_own_balance.grid(row=2, column=0, padx=20, pady=(0, 12))
 
         status_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        status_frame.grid(row=2, column=0, padx=20, pady=4, sticky="ew")
+        status_frame.grid(row=3, column=0, padx=20, pady=4, sticky="ew")
         status_frame.grid_columnconfigure((0, 1), weight=1)
 
         self.lbl_peers = ctk.CTkLabel(
@@ -91,7 +99,7 @@ class BlockchainGUI:
         )
         self.lbl_pending.grid(row=1, column=0, columnspan=2, padx=4, pady=4, sticky="ew")
 
-        _divider(sidebar, row=3)
+        _divider(sidebar, row=4)
 
         self.btn_mine = ctk.CTkButton(
             sidebar,
@@ -102,7 +110,7 @@ class BlockchainGUI:
             height=42,
             font=ctk.CTkFont(size=13, weight="bold"),
         )
-        self.btn_mine.grid(row=4, column=0, padx=20, pady=(6, 4), sticky="ew")
+        self.btn_mine.grid(row=5, column=0, padx=20, pady=(6, 4), sticky="ew")
 
         ctk.CTkButton(
             sidebar,
@@ -111,7 +119,7 @@ class BlockchainGUI:
             fg_color="transparent",
             border_width=1,
             height=36,
-        ).grid(row=5, column=0, padx=20, pady=4, sticky="ew")
+        ).grid(row=6, column=0, padx=20, pady=4, sticky="ew")
 
         self.lbl_mine_status = ctk.CTkLabel(
             sidebar,
@@ -119,22 +127,22 @@ class BlockchainGUI:
             font=ctk.CTkFont(size=11),
             text_color="#e67e22",
         )
-        self.lbl_mine_status.grid(row=6, column=0, padx=20, pady=2)
+        self.lbl_mine_status.grid(row=7, column=0, padx=20, pady=2)
 
-        _divider(sidebar, row=7)
+        _divider(sidebar, row=8)
 
         ctk.CTkLabel(sidebar, text="Conectar a peer", font=ctk.CTkFont(size=12)).grid(
-            row=8, column=0, padx=20, pady=(4, 2)
+            row=9, column=0, padx=20, pady=(4, 2)
         )
         self.entry_peer = ctk.CTkEntry(sidebar, placeholder_text="host:port")
-        self.entry_peer.grid(row=9, column=0, padx=20, pady=4, sticky="ew")
+        self.entry_peer.grid(row=10, column=0, padx=20, pady=4, sticky="ew")
 
         ctk.CTkButton(
             sidebar,
             text="Conectar",
             command=self._connect_peer,
             height=34,
-        ).grid(row=10, column=0, padx=20, pady=(4, 20), sticky="ew")
+        ).grid(row=11, column=0, padx=20, pady=(4, 20), sticky="ew")
 
     def _build_main(self):
         main = ctk.CTkFrame(self.root, corner_radius=0, fg_color="transparent")
@@ -265,13 +273,13 @@ class BlockchainGUI:
         addr = self.entry_bal_addr.get().strip()
         if not addr:
             return
-        if not self.node.blockchain.address_exists(addr):
+        if not self.node.address_exists(addr):
             self.lbl_balance.configure(
                 text=f"Endereço '{addr}' não encontrado na blockchain.",
                 text_color="gray",
             )
             return
-        balance = self.node.blockchain.get_balance(addr)
+        balance = self.node.get_balance(addr)
         color = "#2ecc71" if balance >= 0 else "#e74c3c"
         self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
 
@@ -338,6 +346,8 @@ class BlockchainGUI:
 
     def _refresh_status(self):
         self.lbl_address.configure(text=self.node.address)
+        balance = self.node.get_balance(self.node.address)
+        self.lbl_own_balance.configure(text=f"saldo: {balance:.2f}")
         self.lbl_peers.configure(text=f"Peers\n{self.node.peer_count}")
         self.lbl_blocks.configure(text=f"Blocos\n{len(self.node.chain)}")
         self.lbl_pending.configure(

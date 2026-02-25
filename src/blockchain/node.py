@@ -271,6 +271,9 @@ class Node:
     def get_available_balance(self, address: str) -> float:
         return self.blockchain.get_available_balance(address)
 
+    def address_exists(self, address: str) -> bool:
+        return self.blockchain.address_exists(address)
+
     @property
     def chain(self) -> list[Block]:
         return self.blockchain.chain
