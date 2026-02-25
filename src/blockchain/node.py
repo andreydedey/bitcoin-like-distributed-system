@@ -26,9 +26,10 @@ class Node:
         self.host = host
         self.port = port
         self.address = f"{host}:{port}"
+        self.wallet = host
 
         self.blockchain = Blockchain()
-        self.miner = Miner(self.blockchain, self.address)
+        self.miner = Miner(self.blockchain, self.wallet)
 
         self.peers: set[str] = set()
         self._peer_failures: dict[str, int] = {}

@@ -346,7 +346,7 @@ class BlockchainGUI:
 
     def _refresh_status(self):
         self.lbl_address.configure(text=self.node.address)
-        balance = self.node.get_balance(self.node.address)
+        balance = self.node.get_balance(self.node.wallet)
         self.lbl_own_balance.configure(text=f"saldo: {balance:.2f}")
         self.lbl_peers.configure(text=f"Peers\n{self.node.peer_count}")
         self.lbl_blocks.configure(text=f"Blocos\n{len(self.node.chain)}")
