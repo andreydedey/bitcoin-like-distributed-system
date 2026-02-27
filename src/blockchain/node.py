@@ -26,7 +26,7 @@ class Node:
         self.host = host
         self.port = port
         self.address = f"{host}:{port}"
-        self.wallet = host
+        self.wallet = self.address
 
         self.blockchain = Blockchain()
         self.miner = Miner(self.blockchain, self.wallet)
@@ -253,6 +253,9 @@ class Node:
             self.logger.info(f"Bloco #{block.index} propagado para {len(self.peers)} peers")
 
     def mine(self) -> Block | None:
+        if not self.blockchain.pending_transactions:
+            self.logger.info("Nenhuma transação pendente para minerar.")
+            return None
         self.logger.info("Iniciando mineração...")
 
         def on_progress(nonce: int):
