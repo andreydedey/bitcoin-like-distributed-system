@@ -75,7 +75,7 @@ python3 -m uv run python gui.py --port 5001 --bootstrap localhost:5000
 ### Conectar a um nó de outra máquina (laboratório)
 
 ```bash
-uv run python gui.py --port 5000 --wallet andrey --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
+❯ python gui.py --host {host} --port 5001 --bootstrap {address}
 ```
 
 ### Argumentos disponíveis
