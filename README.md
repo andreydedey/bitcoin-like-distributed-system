@@ -66,10 +66,10 @@ uv run python gui.py --port 5000 --wallet andrey
 
 ```bash
 # Terminal 1 — primeiro nó
-uv run python gui.py --port 5000 --wallet andrey
+python3 -m uv run python gui.py --port 5000
 
 # Terminal 2 — segundo nó, conecta ao primeiro
-uv run python gui.py --port 5001 --wallet andreya --bootstrap localhost:5000
+python3 -m uv run python gui.py --port 5001 --bootstrap localhost:5000
 ```
 
 ### Conectar a um nó de outra máquina (laboratório)
