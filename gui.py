@@ -299,8 +299,12 @@ class BlockchainGUI:
             self.lbl_mine_status.configure(
                 text=f"✓ Bloco #{block.index} minerado!", text_color="#2ecc71"
             )
-        else:
+        elif self.node.pending_transactions:
             self.lbl_mine_status.configure(text="Mineração interrompida", text_color="gray")
+        else:
+            self.lbl_mine_status.configure(
+                text="Sem transações pendentes para minerar.", text_color="gray"
+            )
         self.root.after(5000, lambda: self.lbl_mine_status.configure(text=""))
 
     def _sync(self):
@@ -375,7 +379,7 @@ def _divider(parent, row: int):
 
 def main():
     parser = argparse.ArgumentParser(description="GUI do nó blockchain")
-    parser.add_argument("--host", default="172.20.10.7")
+    parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--bootstrap", nargs="*", default=[])
     args = parser.parse_args()
