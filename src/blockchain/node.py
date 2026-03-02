@@ -256,10 +256,6 @@ class Node:
             self.logger.info(f"Bloco #{block.index} propagado para {len(self.peers)} peers")
 
     def mine(self) -> Block | None:
-        if not self.blockchain.pending_transactions:
-            self.logger.info("Nenhuma transação pendente para minerar.")
-            return None
-
         self.logger.info("Iniciando mineração...")
 
         def on_progress(nonce: int):

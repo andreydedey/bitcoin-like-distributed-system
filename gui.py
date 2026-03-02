@@ -284,6 +284,12 @@ class BlockchainGUI:
         self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
 
     def _mine(self):
+        if not self.node.pending_transactions:
+            self.lbl_mine_status.configure(
+                text="Sem transações pendentes.", text_color="gray"
+            )
+            self.root.after(3000, lambda: self.lbl_mine_status.configure(text=""))
+            return
         self.btn_mine.configure(state="disabled", text="Minerando...")
         self.lbl_mine_status.configure(text="⛏ em andamento...", text_color="#e67e22")
 
