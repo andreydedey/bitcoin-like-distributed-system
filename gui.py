@@ -256,11 +256,16 @@ class BlockchainGUI:
             self._tx_status("Valor inválido.", "red")
             return
 
-        tx = self.node.create_transaction(origem=origem, destino=destino, valor=valor)
-        if tx is None:
-            saldo = self.node.get_available_balance(origem)
-            self._tx_status(f"Saldo insuficiente: {origem} tem {saldo:.2f} disponível", "red")
+        try:
+            tx = self.node.create_transaction(origem=origem, destino=destino, valor=valor)
+        except ValueError as e:
+            self._tx_status(str(e), "red")
             return
+
+        if tx is None:
+            self._tx_status("Transação rejeitada.", "red")
+            return
+
         self._tx_status(f"✓ Transação enviada: {tx.id[:14]}...", "#2ecc71")
         for entry in (self.entry_origem, self.entry_destino, self.entry_valor):
             entry.delete(0, "end")
@@ -273,23 +278,17 @@ class BlockchainGUI:
         addr = self.entry_bal_addr.get().strip()
         if not addr:
             return
-        if not self.node.address_exists(addr):
+        balance = self.node.balance_of(addr)
+        if balance is None:
             self.lbl_balance.configure(
                 text=f"Endereço '{addr}' não encontrado na blockchain.",
                 text_color="gray",
             )
             return
-        balance = self.node.get_balance(addr)
         color = "#2ecc71" if balance >= 0 else "#e74c3c"
         self.lbl_balance.configure(text=f"{addr}:  {balance:.2f}", text_color=color)
 
     def _mine(self):
-        if not self.node.pending_transactions:
-            self.lbl_mine_status.configure(
-                text="Sem transações pendentes.", text_color="gray"
-            )
-            self.root.after(3000, lambda: self.lbl_mine_status.configure(text=""))
-            return
         self.btn_mine.configure(state="disabled", text="Minerando...")
         self.lbl_mine_status.configure(text="⛏ em andamento...", text_color="#e67e22")
 
@@ -305,12 +304,8 @@ class BlockchainGUI:
             self.lbl_mine_status.configure(
                 text=f"✓ Bloco #{block.index} minerado!", text_color="#2ecc71"
             )
-        elif self.node.pending_transactions:
-            self.lbl_mine_status.configure(text="Mineração interrompida", text_color="gray")
         else:
-            self.lbl_mine_status.configure(
-                text="Sem transações pendentes para minerar.", text_color="gray"
-            )
+            self.lbl_mine_status.configure(text="Mineração interrompida", text_color="gray")
         self.root.after(5000, lambda: self.lbl_mine_status.configure(text=""))
 
     def _sync(self):

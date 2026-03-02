@@ -237,6 +237,10 @@ class Node:
             self.logger.info(f"Blockchain sincronizada de {best_peer}: {best_length} blocos")
 
     def create_transaction(self, origem: str, destino: str, valor: float) -> Transaction | None:
+        if origem not in ("genesis", "coinbase"):
+            available = self.blockchain.get_available_balance(origem)
+            if available < valor:
+                raise ValueError(f"Saldo insuficiente: {origem} tem {available:.2f} disponível")
         tx = Transaction(origem=origem, destino=destino, valor=valor)
         if self.broadcast_transaction(tx):
             return tx
@@ -277,6 +281,12 @@ class Node:
 
     def address_exists(self, address: str) -> bool:
         return self.blockchain.address_exists(address)
+
+    def balance_of(self, address: str) -> float | None:
+        """Retorna o saldo confirmado do endereço, ou None se não existir na chain."""
+        if not self.blockchain.address_exists(address):
+            return None
+        return self.blockchain.get_balance(address)
 
     @property
     def chain(self) -> list[Block]:
