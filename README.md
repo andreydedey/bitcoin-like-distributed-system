@@ -59,23 +59,23 @@ uv sync
 ### Nó isolado (sem rede)
 
 ```bash
-uv run python gui.py --port 5000 --wallet andrey
+uv run python gui.py --port 5000
 ```
 
 ### Dois nós na mesma máquina (abra dois terminais)
 
 ```bash
 # Terminal 1 — primeiro nó
-uv run python gui.py --port 5000 --wallet andrey
+uv run python gui.py --port 5000
 
 # Terminal 2 — segundo nó, conecta ao primeiro
-uv run python gui.py --port 5001 --wallet andreya --bootstrap localhost:5000
+uv run python gui.py --port 5001 --bootstrap localhost:5000
 ```
 
 ### Conectar a um nó de outra máquina (laboratório)
 
 ```bash
-uv run python gui.py --port 5000 --wallet andrey --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
+uv run python gui.py --port 5000 --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
 ```
 
 ### Argumentos disponíveis
@@ -84,7 +84,6 @@ uv run python gui.py --port 5000 --wallet andrey --bootstrap <IP_DA_OUTRA_MAQUIN
 |-----------|--------|-----------|
 | `--host` | `localhost` | Endereço em que o nó vai escutar |
 | `--port` | `5000` | Porta do nó |
-| `--wallet` | _(host:port)_ | Nome da carteira que recebe recompensas de mineração |
 | `--bootstrap` | _(nenhum)_ | Endereço(s) de nós existentes para entrar na rede |
 
 ---
@@ -94,7 +93,8 @@ uv run python gui.py --port 5000 --wallet andrey --bootstrap <IP_DA_OUTRA_MAQUIN
 A interface é dividida em sidebar e abas principais:
 
 **Sidebar**
-- Endereço do nó e nome da carteira
+- Endereço do nó (usado automaticamente como carteira para recompensas de mineração)
+- Saldo confirmado do próprio nó
 - Contadores de peers, blocos e transações pendentes (atualizam a cada 2s)
 - Botão de mineração e sincronização
 - Campo para conectar a um novo peer
@@ -129,6 +129,9 @@ Todas as mensagens usam framing TCP com 4 bytes big-endian de tamanho seguidos d
 ### Mineração Paralela
 O `Miner` divide o espaço de nonces entre 4 threads trabalhadoras usando busca interleaved (worker *i* testa nonces *i*, *i+4*, *i+8*, …). A primeira thread a encontrar um hash válido sinaliza as demais para parar.
 
+### Mineração sem Transações Pendentes
+É possível minerar um bloco mesmo quando não há transações pendentes. Nesse caso, o bloco conterá apenas a transação de recompensa (`coinbase → minerador: 50.0`).
+
 ### Priorização de Transações
 Ao minerar, o nó ordena as transações pendentes por valor decrescente, simulando prioridade por taxa de rede. Uma transação de recompensa (`coinbase → minerador: 50.0`) é sempre incluída no início do bloco.
 
@@ -142,6 +145,9 @@ Ao minerar, o nó ordena as transações pendentes por valor decrescente, simula
 
 ### Broadcast Randomizado
 A lista de peers é embaralhada antes de cada broadcast, evitando um padrão fixo de propagação pela rede.
+
+### Validação de Saldo Disponível
+Ao criar uma transação, o nó verifica se o remetente possui saldo disponível suficiente (saldo confirmado menos o total já comprometido em transações pendentes). Origens especiais `genesis` e `coinbase` são isentas dessa verificação.
 
 ### Detecção Rápida de Duplicatas
 O mempool mantém um `set` de IDs (`_pending_ids`) para verificação de transação duplicada em O(1).
