@@ -80,11 +80,11 @@ uv run python gui.py --port 5000 --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
 
 ### Argumentos disponíveis
 
-| Argumento | Padrão | Descrição |
-|-----------|--------|-----------|
-| `--host` | `localhost` | Endereço em que o nó vai escutar |
-| `--port` | `5000` | Porta do nó |
-| `--bootstrap` | _(nenhum)_ | Endereço(s) de nós existentes para entrar na rede |
+| Argumento     | Padrão      | Descrição                                         |
+| ------------- | ----------- | ------------------------------------------------- |
+| `--host`      | `localhost` | Endereço em que o nó vai escutar                  |
+| `--port`      | `5000`      | Porta do nó                                       |
+| `--bootstrap` | _(nenhum)_  | Endereço(s) de nós existentes para entrar na rede |
 
 ---
 
@@ -93,6 +93,7 @@ uv run python gui.py --port 5000 --bootstrap <IP_DA_OUTRA_MAQUINA>:5000
 A interface é dividida em sidebar e abas principais:
 
 **Sidebar**
+
 - Endereço do nó (usado automaticamente como carteira para recompensas de mineração)
 - Saldo confirmado do próprio nó
 - Contadores de peers, blocos e transações pendentes (atualizam a cada 2s)
@@ -100,6 +101,7 @@ A interface é dividida em sidebar e abas principais:
 - Campo para conectar a um novo peer
 
 **Abas**
+
 - **Nova Transação** — envia uma transação para a rede
 - **Saldo** — consulta o saldo de qualquer endereço
 - **Blockchain** — exibe todos os blocos e suas transações
@@ -111,57 +113,65 @@ A interface é dividida em sidebar e abas principais:
 
 Todas as mensagens usam framing TCP com 4 bytes big-endian de tamanho seguidos de JSON UTF-8.
 
-| Tipo | Direção | Descrição |
-|------|---------|-----------|
-| `NEW_TRANSACTION` | Broadcast | Propaga nova transação para todos os peers |
-| `NEW_BLOCK` | Broadcast | Propaga bloco minerado para todos os peers |
-| `REQUEST_CHAIN` | Request | Solicita cópia completa da blockchain |
-| `RESPONSE_CHAIN` | Response | Responde com a blockchain serializada |
-| `PING` | Request | Verifica conectividade e registra o remetente como peer |
-| `PONG` | Response | Resposta ao PING |
-| `DISCOVER_PEERS` | Request | Solicita lista de peers conhecidos |
-| `PEERS_LIST` | Response | Retorna lista de peers para descoberta da rede |
+| Tipo              | Direção   | Descrição                                               |
+| ----------------- | --------- | ------------------------------------------------------- |
+| `NEW_TRANSACTION` | Broadcast | Propaga nova transação para todos os peers              |
+| `NEW_BLOCK`       | Broadcast | Propaga bloco minerado para todos os peers              |
+| `REQUEST_CHAIN`   | Request   | Solicita cópia completa da blockchain                   |
+| `RESPONSE_CHAIN`  | Response  | Responde com a blockchain serializada                   |
+| `PING`            | Request   | Verifica conectividade e registra o remetente como peer |
+| `PONG`            | Response  | Resposta ao PING                                        |
+| `DISCOVER_PEERS`  | Request   | Solicita lista de peers conhecidos                      |
+| `PEERS_LIST`      | Response  | Retorna lista de peers para descoberta da rede          |
 
 ---
 
 ## Destaques de Implementação
 
 ### Mineração Paralela
-O `Miner` divide o espaço de nonces entre 4 threads trabalhadoras usando busca interleaved (worker *i* testa nonces *i*, *i+4*, *i+8*, …). A primeira thread a encontrar um hash válido sinaliza as demais para parar.
+
+O `Miner` divide o espaço de nonces entre 4 threads trabalhadoras usando busca interleaved (worker _i_ testa nonces _i_, _i+4_, _i+8_, …). A primeira thread a encontrar um hash válido sinaliza as demais para parar.
 
 ### Mineração sem Transações Pendentes
+
 É possível minerar um bloco mesmo quando não há transações pendentes. Nesse caso, o bloco conterá apenas a transação de recompensa (`coinbase → minerador: 50.0`).
 
 ### Priorização de Transações
+
 Ao minerar, o nó ordena as transações pendentes por valor decrescente, simulando prioridade por taxa de rede. Uma transação de recompensa (`coinbase → minerador: 50.0`) é sempre incluída no início do bloco.
 
 ### Sincronização Robusta
+
 `sync_blockchain` consulta **todos** os peers em vez de parar no primeiro. Coleta candidatos de todos e adota a cadeia válida mais longa dentre todas as respostas.
 
 ### Gestão de Peers
+
 - Limite de 20 peers simultâneos (`MAX_PEERS`)
 - Rastreamento de falhas por peer: peers com 3+ falhas consecutivas são ignorados no broadcast
 - Ao conectar a um novo peer, o nó envia `DISCOVER_PEERS` para aprender outros nós da rede
 
 ### Broadcast Randomizado
+
 A lista de peers é embaralhada antes de cada broadcast, evitando um padrão fixo de propagação pela rede.
 
 ### Validação de Saldo Disponível
+
 Ao criar uma transação, o nó verifica se o remetente possui saldo disponível suficiente (saldo confirmado menos o total já comprometido em transações pendentes). Origens especiais `genesis` e `coinbase` são isentas dessa verificação.
 
 ### Detecção Rápida de Duplicatas
+
 O mempool mantém um `set` de IDs (`_pending_ids`) para verificação de transação duplicada em O(1).
 
 ---
 
 ## Requisitos do Protocolo
 
-| Parâmetro | Valor |
-|-----------|-------|
-| Hash | SHA-256, `sort_keys=True` no JSON |
-| Dificuldade (PoW) | Hash deve iniciar com `000` |
-| Transporte | TCP |
-| Framing | 4 bytes big-endian com tamanho + JSON UTF-8 |
-| Gênesis `previous_hash` | 64 zeros |
-| Gênesis `timestamp` | `0` |
-| Recompensa de mineração | 50.0 por bloco |
+| Parâmetro               | Valor                                       |
+| ----------------------- | ------------------------------------------- |
+| Hash                    | SHA-256, `sort_keys=True` no JSON           |
+| Dificuldade (PoW)       | Hash deve iniciar com `000`                 |
+| Transporte              | TCP                                         |
+| Framing                 | 4 bytes big-endian com tamanho + JSON UTF-8 |
+| Gênesis `previous_hash` | 64 zeros                                    |
+| Gênesis `timestamp`     | `0`                                         |
+| Recompensa de mineração | 50.0 por bloco                              |
